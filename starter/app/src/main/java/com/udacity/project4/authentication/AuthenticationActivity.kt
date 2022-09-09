@@ -40,8 +40,8 @@ class AuthenticationActivity : AppCompatActivity() {
             signInUser()
         }
 
-        loginViewModel.authenticationState.observe(this) { state ->
-            when (state) {
+        loginViewModel.authenticationState.observe(this) {
+            when (it) {
                 LoginViewModel.AuthenticationState.AUTHENTICATED -> {
                     startActivity(Intent(this, RemindersActivity::class.java))
                     finish()
