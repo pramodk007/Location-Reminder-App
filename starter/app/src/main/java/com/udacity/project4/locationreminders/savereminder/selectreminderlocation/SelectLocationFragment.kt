@@ -54,10 +54,16 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+//         add the map setup implementation
+//         zoom to the user location after taking his permission
+//         add style to the map
+//         put a marker to location that the user selected
+
         binding.buttonSave.setOnClickListener {
             onLocationSelected()
         }
 
+//         call this function after the user confirms on the selected location
         onLocationSelected()
 
         return binding.root
