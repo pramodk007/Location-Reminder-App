@@ -167,11 +167,10 @@ class RemindersActivityTest :
 
         Espresso.onView(withId(R.id.addReminderFAB)).perform(ViewActions.click())
 
-        Espresso.onView(withId(R.id.reminderTitle)).perform(ViewActions.replaceText("Title ABC"))
+        Espresso.onView(withId(R.id.reminderTitle)).perform(ViewActions.replaceText("Title123"))
         Espresso.onView(withId(R.id.reminderDescription))
-            .perform(ViewActions.replaceText("Desc ABC"))
+            .perform(ViewActions.replaceText("Desc123"))
         Espresso.onView(withId(R.id.selectLocation)).perform(ViewActions.click())
-        Espresso.onView(withId(R.id.button)).perform(ViewActions.click())
 
         Espresso.onView(withId(R.id.saveReminder)).perform(ViewActions.click())
 

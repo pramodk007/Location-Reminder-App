@@ -32,10 +32,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var binding: FragmentSelectLocationBinding
 
     private lateinit var map: GoogleMap
-    private val TAG = selectLocation::class.java.simpleName
+    private val TAG = "selectLocationFragment"
     private val REQUEST_LOCATION_PERMISSION = 1
 
-    private lateinit var LocationMarker: Marker
+    private var LocationMarker: Marker? = null
     private lateinit var currentPOI: PointOfInterest
 
     override fun onCreateView(
@@ -70,14 +70,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     private fun onLocationSelected() {
-        LocationMarker.let {
+        LocationMarker?.let {
             _viewModel.reminderSelectedLocationStr.value = it.title
             _viewModel.latitude.value = it.position.latitude
             _viewModel.longitude.value = it.position.longitude
             _viewModel.selectedPOI.postValue(currentPOI)
 
         }
-        findNavController().popBackStack()
     }
 
 
@@ -169,7 +168,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         map.setOnPoiClickListener { pointOfInterest ->
             val currentLocation = pointOfInterest.latLng
-            this.LocationMarker.remove()
+            this.LocationMarker?.remove()
             currentPOI = pointOfInterest
             LocationMarker = map.addMarker(
                 MarkerOptions()
@@ -183,7 +182,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
         if (isPermissionGranted()) {
-            map.setMyLocationEnabled(true)
+            map.isMyLocationEnabled = true
         } else {
             ActivityCompat.requestPermissions(
                 requireActivity(),

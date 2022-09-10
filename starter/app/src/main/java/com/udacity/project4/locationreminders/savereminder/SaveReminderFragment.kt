@@ -70,6 +70,7 @@ class SaveReminderFragment : BaseFragment() {
         setDisplayHomeAsUpEnabled(true)
 
         binding.viewModel = _viewModel
+        geofencingClient = LocationServices.getGeofencingClient(requireActivity())
 
         return binding.root
     }
