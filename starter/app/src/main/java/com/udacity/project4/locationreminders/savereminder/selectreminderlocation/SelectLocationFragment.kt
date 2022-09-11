@@ -6,14 +6,17 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
@@ -38,9 +41,14 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private val TAG = "selectLocationFragment"
     private val REQUEST_LOCATION_PERMISSION = 1
+    private val defaultLocation = LatLng(-19.917299, -43.934559)
 
     private var LocationMarker: Marker? = null
     private lateinit var currentPOI: PointOfInterest
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var lastKnownLocation: Location? = null
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -57,6 +65,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(requireActivity())
 
 //         add the map setup implementation
 //         zoom to the user location after taking his permission
@@ -188,6 +199,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         if (isPermissionGranted()) {
             if (isLocationEnabled()) {
                 map.isMyLocationEnabled = true
+                updateMapUI()
+                getDeviceLocation()
             } else {
                 LocationRequest.create().apply {
                     priority = LocationRequest.PRIORITY_LOW_POWER
@@ -200,6 +213,43 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         }
     }
+
+    private fun updateMapUI() {
+        try {
+            if (isPermissionGranted()) {
+                map.uiSettings?.isMyLocationButtonEnabled = true
+                map.uiSettings?.isMapToolbarEnabled = false
+                map.isMyLocationEnabled = true
+            } else {
+                map.uiSettings?.isMyLocationButtonEnabled = false
+                map.uiSettings?.isMapToolbarEnabled = false
+                map.isMyLocationEnabled = false
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, e.message, e)
+        }
+    }
+
+    private fun getDeviceLocation() {
+        try {
+            if (isPermissionGranted()) {
+                val lastLocation = fusedLocationProviderClient.lastLocation
+                lastLocation?.addOnCompleteListener(requireActivity()) { task ->
+                    if (task.isSuccessful) {
+                        lastKnownLocation = task.result!!
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude), 10f))
+                    } else {
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, e.message, e)
+        }
+
+    }
+
 
     private fun isLocationEnabled(): Boolean {
         val locationManager =
@@ -226,8 +276,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 enableMyLocation()
 
             } else {
-                Snackbar.make(requireView(), "Please allow location permission in app configuration"
-                    , Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(
+                    requireView(),
+                    "Please allow location permission in app configuration",
+                    Snackbar.LENGTH_SHORT
+                ).show()
             }
         }
     }
