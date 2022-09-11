@@ -72,5 +72,7 @@ class RemindersLocalRepositoryTest {
         val result = remindersLocalRepository.getReminder("1")
         val error =  (result is Result.Error)
         assertThat(error, CoreMatchers.`is`(true))
+        result as Result.Error
+        assertThat(result.message, CoreMatchers.`is`("Reminder not found!"))
     }
 }

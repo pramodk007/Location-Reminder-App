@@ -3,7 +3,6 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
-import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
@@ -40,6 +39,8 @@ class SaveReminderFragment : BaseFragment() {
         private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
         private const val REQUEST_TURN_DEVICE_LOCATION_ON = 35
         private const val GEOFENCE_RADIUS_IN_METERS = 10000f
+        private const val LOCATION_PERMISSION_INDEX = 0
+        private const val BACKGROUND_LOCATION_PERMISSION_INDEX = 1
     }
 
     //Get the view model this time as a single to be shared with the another fragment
@@ -113,16 +114,16 @@ class SaveReminderFragment : BaseFragment() {
         }
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
 
-        val settingsClient = LocationServices.getSettingsClient(requireActivity())
+        val settingsClient = LocationServices.getSettingsClient(requireContext())
         val locationSettingsResponseTask =
             settingsClient.checkLocationSettings(builder.build())
 
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve) {
                 try {
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null, 0, 0, 0, null
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
@@ -206,5 +207,26 @@ class SaveReminderFragment : BaseFragment() {
         super.onDestroy()
         //make sure to clear the view model after destroy, as it's a single view model.
         _viewModel.onClear()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantedResults: IntArray
+    ) {
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantedResults)
+        if (grantedResults.isEmpty() ||
+            grantedResults[LOCATION_PERMISSION_INDEX] == PackageManager.PERMISSION_DENIED ||
+            (requestCode == REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE &&
+                    grantedResults[BACKGROUND_LOCATION_PERMISSION_INDEX] == PackageManager.PERMISSION_DENIED)
+        ) {
+
+            _viewModel.showSnackBarInt.value = R.string.permission_denied_explanation
+
+        } else {
+
+            checkDeviceLocationSettingsAndStartGeofence()
+        }
     }
 }
