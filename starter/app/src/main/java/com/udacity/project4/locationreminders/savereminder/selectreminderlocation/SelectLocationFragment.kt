@@ -206,11 +206,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     priority = LocationRequest.PRIORITY_LOW_POWER
                 }
             }
+        } else {
             requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUEST_LOCATION_PERMISSION
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION_PERMISSION
             )
-
         }
     }
 
@@ -237,8 +236,12 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 lastLocation?.addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         lastKnownLocation = task.result!!
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude), 10f))
+                        map.moveCamera(
+                            CameraUpdateFactory.newLatLngZoom(
+                                LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude),
+                                10f
+                            )
+                        )
                     } else {
                         map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
                     }
