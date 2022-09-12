@@ -4,6 +4,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.location.Location
@@ -13,9 +14,11 @@ import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -26,6 +29,7 @@ import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
+import com.udacity.project4.locationreminders.savereminder.SaveReminderFragment.Companion.REQUEST_TURN_DEVICE_LOCATION_ON
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import kotlinx.android.synthetic.main.fragment_save_reminder.*
@@ -202,9 +206,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 updateMapUI()
                 getDeviceLocation()
             } else {
-                LocationRequest.create().apply {
-                    priority = LocationRequest.PRIORITY_LOW_POWER
-                }
+                showEnableMyLocationSetting()
             }
         } else {
             requestPermissions(
@@ -253,6 +255,43 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     }
 
+    private fun showEnableMyLocationSetting() {
+        val locationRequest = LocationRequest.create().apply {
+            priority = LocationRequest.PRIORITY_LOW_POWER
+        }
+
+        val locationSettingRequestsBuilder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+        val settingsClient = LocationServices.getSettingsClient(requireContext())
+        val locationSettingsResponseTask = settingsClient.checkLocationSettings(
+            locationSettingRequestsBuilder.build()
+        )
+
+        locationSettingsResponseTask.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException) {
+                try {
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                        REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null,
+                        0,
+                        0,
+                        0,
+                        null
+                    )
+                } catch (e: IntentSender.SendIntentException) {
+                    Log.d(TAG, "Error resolving location settings" + e.message)
+                }
+            } else {
+                _viewModel.showErrorMessage.postValue(getString(R.string.location_required_error))
+            }
+        }
+        locationSettingsResponseTask.addOnCompleteListener {
+            if (it.isSuccessful) {
+                enableMyLocation()
+            }
+        }
+    }
 
     private fun isLocationEnabled(): Boolean {
         val locationManager =
